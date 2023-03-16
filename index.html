@@ -2,14 +2,42 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>react life</title>
-    <script type="module" crossorigin src="/game-of-life/assets/index-91a60163.js"></script>
+    <script type="module" crossorigin src="/game-of-life/assets/index-46d8a21f.js"></script>
     <link rel="stylesheet" href="/game-of-life/assets/index-5137f6af.css">
   </head>
   <body>
     <div id="root"></div>
+    <ol>
+      rules:
+      <li>Pokud v sousedících buňkách kolem organizmu existují dva nebo tři další organizmy, může organizmus přežít</li>
+      <li>
+        Pokud v sousedících buňkách kolem organizmu existují méně jak dva další organizmy, tak organizmus zanikne</li>
+      <li>Pokud v sousedících buňkách kolem organizmu existují čtyři nebo více dalších organizmů, tak organizmus zanikne
+      </li>
+      <li>Pokud obklopují přesně tři organizmy stejnou buňku, tak v ní může vzniknout nový organizmus</li>
+      <li>Pokud přesně dva organizmy obklopují stejnou buňku, jeden z nich musí zaniknout (náhodný výběr)<br>
+        <em> this rule is not being implemented in this build because i think it was being too mean to the cells :((</em>
+      </li>
+
+
+
+    </ol>
+    <ul>
+      <li>board is empty by default (every cell is dead)</li>
+            <li>clicking a cell brings it to life, unclicking kills it again</li>
+      <li>use preset brings into life cells at coordinates X 21 Y 17
+      X 22 Y 17
+      X 23 Y 17
+      X 23 Y 18
+      X 23 Y 19
+      X 22 Y 19
+      X 21 Y 19</li>
+
+      <li>start runs the simulations at 50 ms, same button (stop) pauses it</li>
+      <li>clear empties the board</li>
+    </ul>
     
   </body>
 </html>
