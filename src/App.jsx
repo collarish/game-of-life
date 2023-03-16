@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import './App.css'
 
 function App() {
   const columns = 40;
@@ -96,7 +97,7 @@ function App() {
         onClick={() => {
           return setRunning(!running)
         }}
-      >{running ? "cool changed state but nothing else happening sorry u can go back" : "start"}</button>
+      >{running ? "im changing states but dont do anything" : "start"}</button>
       <button
         onClick={() => {
           setGrid(emptyGrid(columns, rows))
