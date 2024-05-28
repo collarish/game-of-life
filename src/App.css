@@ -17,10 +17,12 @@
   border: 2px solid white;
   padding: 1rem;
   margin-bottom: -3rem;
+  background: black;
 }
 
 .cell {
   cursor: pointer;
+  scale: 120%;
 }
 
 button {
