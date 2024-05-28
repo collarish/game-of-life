@@ -1,212 +1,141 @@
-import React, { useState, useEffect } from 'react'
-import './App.css'
+import React, { useState, useEffect, createContext, useContext } from 'react';
+import './App.css';
 
-const columns = 40;
-const rows = 40;
-const delay = 50;
+const COLUMNS = 40;
+const ROWS = 40;
+const DELAY = 50;
+const NEIGHBOR_POSITIONS = [
+  [-1, -1], [-1, 0], [-1, 1],
+  [0, -1], [0, 1],
+  [1, -1], [1, 0], [1, 1]
+];
+
+const preset = [
+  { x: 1, y: 5 }, { x: 1, y: 6 }, { x: 2, y: 5 }, { x: 2, y: 6 },
+  { x: 11, y: 5 }, { x: 11, y: 6 }, { x: 11, y: 7 },
+  { x: 12, y: 4 }, { x: 12, y: 8 },
+  { x: 13, y: 3 }, { x: 13, y: 9 },
+  { x: 14, y: 3 }, { x: 14, y: 9 },
+  { x: 15, y: 6 },
+  { x: 16, y: 4 }, { x: 16, y: 8 },
+  { x: 17, y: 5 }, { x: 17, y: 6 }, { x: 17, y: 7 },
+  { x: 18, y: 6 },
+  { x: 21, y: 3 }, { x: 21, y: 4 }, { x: 21, y: 5 },
+  { x: 22, y: 3 }, { x: 22, y: 4 }, { x: 22, y: 5 },
+  { x: 23, y: 2 }, { x: 23, y: 6 },
+  { x: 25, y: 1 }, { x: 25, y: 2 }, { x: 25, y: 6 }, { x: 25, y: 7 },
+  { x: 35, y: 3 }, { x: 35, y: 4 },
+  { x: 36, y: 3 }, { x: 36, y: 4 },
+];
+
+const DragContext = createContext({
+  isDragging: false,
+  startDragging: () => {},
+  stopDragging: () => {}
+});
 
 function App() {
-
-  const [grid, setGrid] = useState(emptyGrid(columns, rows));
+  const [grid, setGrid] = useState(emptyGrid());
   const [running, setRunning] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const preset = [
-    { x: 21, y: 17, isAlive: true },
-    { x: 22, y: 17, isAlive: true },
-    { x: 23, y: 17, isAlive: true },
-    { x: 23, y: 18, isAlive: true },
-    { x: 23, y: 19, isAlive: true },
-    { x: 22, y: 19, isAlive: true },
-    { x: 21, y: 19, isAlive: true },
-  ]
+  const dragState = {
+    isDragging,
+    startDragging: () => setIsDragging(true),
+    stopDragging: () => setIsDragging(false),
+  };
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      if (running)
-        moveToNextStep(setGrid);
-    }, delay);
-    return () => {
-      clearInterval(intervalId);
-    };
+      if (running) moveToNextStep(setGrid);
+    }, DELAY);
+    return () => clearInterval(intervalId);
   }, [running]);
 
+  const handleCellInteraction = (toggleCell) => {
+    setRunning(false);
+    toggleCell();
+  };
 
   return (
-    <div className="App">
-      <div className='grid'
-        style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${columns}, 20px)`
-        }}
-      >
-        {grid.map((row, x) =>
-          row.map((cell, y) =>
-            <Cell
-              key={`${x}-${y}`}
-              x={x}
-              y={y}
-              setGrid={setGrid}
-              isAlive={cell.isAlive}
-            />
-          )
-        )}
-
+    <DragContext.Provider value={dragState}>
+      <div className="App">
+        <div className='grid' style={{ display: 'grid', gridTemplateColumns: `repeat(${COLUMNS}, 20px)` }}>
+          {grid.map((row, x) => row.map((cell, y) => (
+            <Cell key={`${x}-${y}`} x={x} y={y} setGrid={setGrid} isAlive={cell.isAlive} onInteraction={handleCellInteraction} />
+          )))}
+        </div>
+        <button onClick={() => setGrid(applyPreset)}>use preset</button>
+        <button onClick={() => setRunning(!running)}>{running ? "stop" : "start"}</button>
+        <button onClick={() => setGrid(emptyGrid)}>clear</button>
       </div>
-      {/* <button onClick={() => { moveToNextStep(setGrid); }
-      }
-      >next gen
-      </button> */}
-      <button
-
-        onClick={() => {
-          const empty = emptyGrid(columns, rows);
-          debugger;
-          const presetGrid = empty.map((row, x) =>
-            row.map((cell, y) => {
-              debugger;
-              if (preset.some(presetCell => (presetCell.x == x && presetCell.y == y))) {
-                return { ...cell, isAlive: true };
-              }
-              return cell;
-            }
-            )
-          );
-          setGrid(presetGrid);
-        }}
-      >
-        use preset</button>
-      <button
-        onClick={() => {
-          return setRunning(!running)
-        }}
-      >{running ? "stop" : "start"}</button>
-      <button
-        onClick={() => {
-          setGrid(emptyGrid(columns, rows))
-        }}
-      >clear</button>
-    </div >
-  )
+    </DragContext.Provider>
+  );
 }
 
 function moveToNextStep(setGrid) {
   setGrid(currentGrid => {
-    //array of elements of type {cell: {isAlive: Boolean}, x: Number, y: Number}
-    const cellsToKill = [];
-
-    const nextGeneration =
-      currentGrid.map((row, x) =>
-        row.map((cell, y) => {
-
-          const neighbors = neighborPositions.map(([x1, y1]) => {
-            const x2 = x + x1;
-            const y2 = y + y1;
-            if (x2 >= 0 && x2 < columns && y2 >= 0 && y2 < rows) {
-              return { cell: currentGrid[x2][y2], x: x2, y: y2 };
-            }
-            return null;
-          }).filter(x => x != null);
-
-
-          const aliveNeighbors = neighbors.filter(n => n.cell.isAlive);
-          const aliveNeighborCount = aliveNeighbors.length;
-
-
-          if (cell.isAlive) {
-            // debugger;
-            if (aliveNeighborCount === 2) {
-              const random = Math.random();
-              const killNeighborIndex = random >= 0.5 ? 1 : 0;
-              const neighborToKill = aliveNeighbors[killNeighborIndex];
-
-              cellsToKill.push(neighborToKill);
-            }
-            return aliveNeighborCount === 2 || aliveNeighborCount === 3
-              // 1. Pokud v sousedících buňkách kolem organizmu existují dva nebo tři další organizmy, může organizmus přežít
-              ? { ...cell, isAlive: true }
-              // 2. Pokud v sousedících buňkách kolem organizmu existují čtyři nebo více dalších organizmů, tak organizmus zanikne
-              // 3. Pokud v sousedících buňkách kolem organizmu existují méně jak dva další organizmy, tak organizmus zanikne
-              : { ...cell, isAlive: false }
-          }
-
-          return aliveNeighborCount === 3
-            // 4. Pokud obklopují přesně tři organizmy stejnou buňku, tak v ní může vzniknout nový organizmus
-            ? { ...cell, isAlive: true }
-            // jinak nekromancie nefunguje
-            : { ...cell, isAlive: false }
-        }
-        )
-      );
-
-    nextGeneration.forEach((row, x) => {
-      row.forEach((cell, y) => {
-        if (cellsToKill.some((cellsToKillElement) => (cellsToKillElement.x == x && cellsToKillElement.y == y))) {
-          //uncomment for CoinFlipDeath rule = Pokud přesně dva organizmy obklopují stejnou buňku, jeden z nich musí zaniknout (náhodný výběr)
-          // cell.isAlive = false;
-        }
+    const nextGeneration = currentGrid.map((row, x) =>
+      row.map((cell, y) => {
+        const neighbors = NEIGHBOR_POSITIONS.map(([dx, dy]) => {
+          const nx = x + dx, ny = y + dy;
+          return (nx >= 0 && nx < COLUMNS && ny >= 0 && ny < ROWS) ? currentGrid[nx][ny] : null;
+        }).filter(n => n);
+        const aliveNeighbors = neighbors.filter(n => n.isAlive).length;
+        const shouldLive = cell.isAlive ? (aliveNeighbors === 2 || aliveNeighbors === 3) : aliveNeighbors === 3;
+        return { ...cell, isAlive: shouldLive };
       })
-    })
-
+    );
     return nextGeneration;
-
   });
 }
 
-function emptyGrid(columns, rows) {
-  const grid = [];
-
-  for (let x = 0; x < columns; x++) {
-    grid.push([]);
-    for (let y = 0; y < rows; y++) {
-      grid[x].push({ isAlive: false })
-    }
-  }
-  return grid
+function emptyGrid() {
+  return Array.from({ length: COLUMNS }, () => Array.from({ length: ROWS }, () => ({ isAlive: false })));
 }
 
-function Cell(props) {
-  const x = props.x;
-  const y = props.y;
-  const position = (`x:${x},y:${y}`);
-  const setGrid = props.setGrid;
-  const isAlive = props.isAlive;
+function applyPreset(currentGrid) {
+  return currentGrid.map((row, x) => row.map((cell, y) => {
+    return preset.some(p => p.x === x && p.y === y) ? { ...cell, isAlive: true } : cell;
+  }));
+}
+
+function Cell({ x, y, setGrid, isAlive, onInteraction }) {
+  const { isDragging, startDragging, stopDragging } = useContext(DragContext);
+
+  const toggleCell = () => {
+    setGrid(currentState => {
+      return currentState.map((row, rowIndex) => {
+        return row.map((cell, colIndex) => {
+          if (rowIndex === x && colIndex === y) {
+            return { ...cell, isAlive: !cell.isAlive };
+          }
+          return cell;
+        });
+      });
+    });
+  };
 
   return (
-    <div className='cell'
-
-      onClick={() => {
-        // console.log(position);
-        setGrid(currentState => {
-
-          const updatedState = currentState.map((row, x1) => {
-            return row.map((cell, y1) => {
-              return (x1 === x && y1 === y) ? { ...cell, isAlive: !cell.isAlive } : cell
-
-            })
-          });
-          return updatedState;
-        })
-      }
-      }
+    <div
+      className='cell'
+      onMouseDown={(e) => {
+        e.preventDefault(); 
+        startDragging();
+        onInteraction(toggleCell);
+      }}
+      onMouseEnter={() => {
+        if (isDragging) {
+          onInteraction(toggleCell);
+        }
+      }}
+      onMouseUp={() => stopDragging()}
+      onDragStart={(e) => e.preventDefault()} 
+      style={{ cursor: 'pointer' }}
     >
       {isAlive ? "⭐" : "."}
-    </div >
-  )
+    </div>
+  );
 }
 
-
-
-const neighborPositions = [
-  [-1, -1],
-  [-1, 0],
-  [-1, 1],
-  [0, -1],
-  [0, 1],
-  [1, -1],
-  [1, 0],
-  [1, 1]
-]
-
-
-
-export default App
+export default App;
